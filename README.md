@@ -1,5 +1,9 @@
 # Sushinda's Game
-![Shushinda Hushwhisper](/images/shushinda_avatar_transparent.png "Shushinda Hushwisper")
+
+
+<p align="center">
+    <img src="./images/sushinda.jpeg" width="300">
+</p>
 
 Shushinda Hushwhisper, born into a long line of unremarkable wizards, held no extraordinary promise. In fact, his talent lay in making the ordinary a touch chaotic. A magical accident quite early in his studies left his spells prone to targeting library materials rather than their intended subjects. This penchant for rearranging spellbooks and summoning dusty tomes was a source of constant frustration for his professors, but a secret delight for Shushinda.
 
