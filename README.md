@@ -41,7 +41,8 @@ SELECT * FROM vector_search.INFORMATION_SCHEMA.VECTOR_INDEXES;
 
 # Backstory
 
-* Important facts about Shushinda Hushwisper
+**Important facts about Shushinda Hushwisper**
+
 * Shushinda Hushwhisper, despite her chaotic magic, managed to graduate from Unseen University – much to the surprise of her professors.
 * She has a peculiar fondness for rearranging library stacks, especially when she's bored or startled.
 * No one can make a stern treatise on the 'Perils of Thaumaturgy' dance quite like Shushinda.
