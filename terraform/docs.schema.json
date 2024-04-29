@@ -1,0 +1,17 @@
+[
+    {
+      "mode": "NULLABLE",
+      "name": "id",
+      "type": "STRING"
+    },
+    {
+      "mode": "NULLABLE",
+      "name": "doc_name",
+      "type": "STRING"
+    },
+    {
+      "mode": "NULLABLE",
+      "name": "text",
+      "type": "STRING"
+    }
+]

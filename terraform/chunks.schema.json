@@ -1,0 +1,22 @@
+[
+    {
+      "mode": "NULLABLE",
+      "name": "id",
+      "type": "STRING"
+    },
+    {
+      "mode": "NULLABLE",
+      "name": "doc_name",
+      "type": "STRING"
+    },
+    {
+      "mode": "NULLABLE",
+      "name": "chunk_text",
+      "type": "STRING"
+    },
+    {
+      "mode": "REPEATED",
+      "name": "chunk_vector",
+      "type": "FLOAT"
+    }
+]
