@@ -32,17 +32,17 @@ provider "google" {
 ######
 
 
-resource "google_bigquery_dataset" "sushindas_stuff" {
-  dataset_id                  = "sushindas_stuff"
-  friendly_name               = "sushindas_stuff"
-  description                 = "Houses all of Sushinda's stuff."
+resource "google_bigquery_dataset" "shushindas_stuff" {
+  dataset_id                  = "shushindas_stuff"
+  friendly_name               = "shushindas_stuff"
+  description                 = "Houses all of Shushinda's stuff."
   
   delete_contents_on_destroy  = var.destroy_all
 
 }
 
 resource "google_bigquery_table" "docs" {
-  dataset_id = google_bigquery_dataset.sushindas_stuff.dataset_id
+  dataset_id = google_bigquery_dataset.shushindas_stuff.dataset_id
   table_id   = "docs"
   deletion_protection = false
 
@@ -51,7 +51,7 @@ resource "google_bigquery_table" "docs" {
 
 
 resource "google_bigquery_table" "chunks" {
-  dataset_id = google_bigquery_dataset.sushindas_stuff.dataset_id
+  dataset_id = google_bigquery_dataset.shushindas_stuff.dataset_id
   table_id   = "chunks"
   deletion_protection = false
 
