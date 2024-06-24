@@ -1,0 +1,62 @@
+#img_container {
+    position:relative;
+    display:inline-block;
+    text-align:center;
+    border:10px outset #5d361ae8;
+    
+    /* This is a wooden border */
+    /* border-width:5px;
+    border-image:url(http://blogrope.com/wp-content/uploads/2013/06/003-wood-melamine-subttle-pattern-background-pat.jpg) 30 30 stretch;
+    -moz-border-image: url(http://blogrope.com/wp-content/uploads/2013/06/003-wood-melamine-subttle-pattern-background-pat.jpg) 30 30 stretch;
+    -ms-border-image: url(http://blogrope.com/wp-content/uploads/2013/06/003-wood-melamine-subttle-pattern-background-pat.jpg) 30 30 stretch;
+    -o-border-image: url(http://blogrope.com/wp-content/uploads/2013/06/003-wood-melamine-subttle-pattern-background-pat.jpg) 30 30 stretch;
+    border-style:solid;
+    border-radius:1px */
+}
+
+.alert {
+    position:absolute;
+    bottom:10px;
+    right:10px;
+    width:80%;
+    opacity: 0.85;
+    /* height:30px; */
+}
+
+
+.bg-dark {
+    background-color: #343a40 !important; 
+}
+
+.chat-history {
+    height: 350px;
+    overflow-y: scroll; /* Allow scrolling within chat area */
+}
+
+.msg-bubble {
+    background-color: #474e5d;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 10px; 
+    max-width: 70%; /* Limit message width */
+}
+
+.msg-sent {  
+    margin-right: 20px;
+}
+
+.msg-received { 
+    background-color: #5d361ae8; /* Perhaps a different color for sent messages */
+    margin-left: 20px; 
+}
+
+.msg-time {
+    display: block;
+    font-size: 12px; 
+    opacity: 0.7; /* Make time a little less prominent */
+    text-align: right; 
+}
+
+#questionSpinner {
+    display:none;
+}

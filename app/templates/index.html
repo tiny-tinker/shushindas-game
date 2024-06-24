@@ -1,0 +1,130 @@
+{% extends "layout.html" %}
+{% block content %}
+
+
+
+<div class="my-3"></div>
+
+<h1 class="text-center display-1">Shushinda's Desk</h1>
+
+
+<!--######## Image and Desk -->
+<div class="row">
+    <div class="col"></div>
+    <div class="col-8 container">
+        <div id="img_container">
+            <img src="{{url_for('static', filename='shushinda_at_desk.jpeg')}}" class="rounded img-fluid">
+            <div class="my-2"></div>
+            <div id="responses" class="alert alert-light" role="alert">
+                {{model.message}}
+            </div>
+        </div>
+    </div>
+    <div class="col"></div>
+</div>
+<!--######## Image and Desk -->
+<div class="my-4"></div>
+
+<!--######## Sample Questions -->
+<div class="container">
+    <div class="row">
+
+
+        <div class="d-grid gap-2 col-4 mx-auto">
+            <form method="POST" name="quickQuestion1InputForm">
+                <button class="btn btn-outline-secondary" type="submit" id="quickQ1Button">{{model.question1}}</button>
+                <input type="text" hidden class="form-control" id="quickQ1Input" name="quickQ1Input"
+                    value="{{model.question1}}">
+            </form>
+            <form method="POST" name="quickQuestion2InputForm">
+                <button class="btn btn-outline-secondary" type="submit" id="quickQ1Button">{{model.question2}}</button>
+                <input type="text" hidden class="form-control" id="quickQ2Input" name="quickQ2Input"
+                    value="{{model.question2}}">
+            </form>
+        </div>
+        <div class="d-grid gap-2 col-4 mx-auto">
+            <form method="POST" name="quickQuestion3InputForm">
+                <button class="btn btn-outline-secondary" type="submit" id="quickQ3Button">{{model.question3}}</button>
+                <input type="text" hidden class="form-control" id="quickQ3Input" name="quickQ3Input"
+                    value="{{model.question3}}">
+            </form>
+            <form method="POST" name="quickQuestion4InputForm">
+                <button class="btn btn-outline-secondary" type="submit" id="quickQ4Button">{{model.question4}}</button>
+                <input type="text" hidden class="form-control" id="quickQ4Input" name="quickQ4Input"
+                    value="{{model.question4}}">
+            </form>
+
+        </div>
+        </form>
+    </div>
+</div>
+<!--######## Sample Questions -->
+
+<div class="my-4"></div>
+<!--######## Gather Questions -->
+<div class="container">
+    <div class="row">
+        <form method="POST" id="questionInputForm">
+
+            <div class="input-group">
+                <div class="form-floating" id="questionForm">
+                    <input type="text" class="form-control" id="questionInput" name="questionInput"
+                        placeholder="Ask Shushinda">
+                    <label for="questionInput">Ask Shushinda</label>
+                </div>
+                <button class="btn btn-outline-secondary" type="submit" id="buttonAsk" for="questionInput">
+                    Ask
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+</div>
+<!--######## Gather Questions -->
+<div class="my-4"></div>
+
+<!--######## History -->
+<div class="container-fluid bg-dark">
+    <div class="row">
+        <div class="col-md-12 mt-4">
+            <div class="card">
+                <div class="card-header text-white bg-secondary">
+                    Chat with Shushinda Hushwisper
+                </div>
+                <div class="card-body chat-history">
+                    {% for item in model.history %}
+                    {% if item.is_her %}
+                    <!-- Render her text -->
+                    <div class="d-flex justify-content-end mb-2">
+                        <div class="msg-bubble msg-received">
+                            {{ item.text|safe }}
+                            <!-- <span class="msg-time">{{ item.timestamp.strftime( "%m/%d, %H:%M" ) }}</span> -->
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Render my text -->
+                    <div class="d-flex justify-content-start mb-2">
+                        <div class="msg-bubble msg-sent">
+                            {{ item.text|safe }}
+                            <!-- <span class="msg-time">{{ item.timestamp.strftime( "%m/%d, %H:%M" ) }}</span> -->
+                        </div>
+                    </div>
+
+                    {% endif %}
+
+
+                    {% endfor %}
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--######## History -->
+<div class="my-4"></div>
+
+
+{% endblock %}

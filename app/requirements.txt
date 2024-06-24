@@ -1,0 +1,9 @@
+Flask
+Jinja2
+pytest
+pyyaml
+google-cloud-aiplatform
+PyPDF2
+setuptools
+wheel
+spacy
