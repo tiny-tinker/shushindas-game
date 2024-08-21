@@ -10,7 +10,17 @@ Under the guise of exasperated sighs and mutterings of incompetence, a mischievo
 
 # Installation
 
+Install the spaCy libraries
 
+```bash
+python -m spacy download en_core_web_md
+```
+
+
+// TODO: Add more vector databases
+If you're using BigQuery, this will create the dataset and tables to store the embeddings. 
+
+## Google Family
 ```bash
 export MY_PROJECT=`gcloud config get-value project`
 echo "Using GCP project '$MY_PROJECT'"...
@@ -23,6 +33,8 @@ export EMB_MODEL="textembedding-gecko@002"
 export TF_VAR_project=$MY_PROJECT
 export TF_VAR_bq_region=$BQ_REGION
 ```
+
+TODO: Sort out what to do about this.
 
 Now run some terraform.
 
@@ -46,6 +58,12 @@ bq query --use_legacy_sql=false $QUERY
 
 ```
 
+
+## OpenAI
+Set `OPENAI_API_KEY` with a valid OpenAI key.
+
+## Pinecone
+Set `PINECONE_KEY` with a valid Pinecone key.
 
 
 # Architecture

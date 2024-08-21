@@ -2,18 +2,41 @@
 {% block content %}
 
 
+<script>
+    defaultModel = "{{ model.llms[0] | safe }}";
+</script>
 
-<div class="my-3"></div>
 
-<h1 class="text-center display-1">Shushinda's Desk</h1>
+<!-- <div class="my-3"></div> -->
 
+<div class="row">
+    <div class="col-sm"></div>
+    <div class="col-sm"></div>
+    <div class="col-sm">
+        <div class="dropdown" id="modelDropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                type="button" data-bs-toggle="dropdown" >
+            {{ model.llms[0] | safe }}
+            </button>
+            <div class="dropdown-menu">
+                {% for item in model.llms %}
+                <a class="dropdown-item" href="#" value="{{item|safe}}">{{item | safe }}</a>
+                {% endfor %}
+            </div>
+          </div>
+    </div>
+</div>
+
+<div class="row">
+    <h1 class="text-center display-1">Shushinda's Desk</h1>
+</div>
 
 <!--######## Image and Desk -->
 <div class="row">
     <div class="col"></div>
     <div class="col-8 container">
         <div id="img_container">
-            <img src="{{url_for('static', filename='shushinda_at_desk.jpeg')}}" class="rounded img-fluid">
+            <img src="{{url_for('static', filename='shushinda_at_desk_0.png')}}" style="height: 600px;" class="rounded img-fluid">
             <div class="my-2"></div>
             <div id="responses" class="alert alert-light" role="alert">
                 {{model.message}}
@@ -32,30 +55,30 @@
 
         <div class="d-grid gap-2 col-4 mx-auto">
             <form method="POST" name="quickQuestion1InputForm">
-                <button class="btn btn-outline-secondary" type="submit" id="quickQ1Button">{{model.question1}}</button>
+                <button class="btn btn-outline-secondary" id="quickQ1Button"><span>{{model.question1}}</span></button>
                 <input type="text" hidden class="form-control" id="quickQ1Input" name="quickQ1Input"
                     value="{{model.question1}}">
             </form>
             <form method="POST" name="quickQuestion2InputForm">
-                <button class="btn btn-outline-secondary" type="submit" id="quickQ1Button">{{model.question2}}</button>
+                <button class="btn btn-outline-secondary"  id="quickQ2Button"><span>{{model.question2}}</span></button>
                 <input type="text" hidden class="form-control" id="quickQ2Input" name="quickQ2Input"
                     value="{{model.question2}}">
             </form>
         </div>
         <div class="d-grid gap-2 col-4 mx-auto">
             <form method="POST" name="quickQuestion3InputForm">
-                <button class="btn btn-outline-secondary" type="submit" id="quickQ3Button">{{model.question3}}</button>
+                <button class="btn btn-outline-secondary" id="quickQ3Button"><span>{{model.question3}}</span></button>
                 <input type="text" hidden class="form-control" id="quickQ3Input" name="quickQ3Input"
                     value="{{model.question3}}">
             </form>
             <form method="POST" name="quickQuestion4InputForm">
-                <button class="btn btn-outline-secondary" type="submit" id="quickQ4Button">{{model.question4}}</button>
+                <button class="btn btn-outline-secondary" id="quickQ4Button"><span>{{model.question4}}</span></button>
                 <input type="text" hidden class="form-control" id="quickQ4Input" name="quickQ4Input"
                     value="{{model.question4}}">
             </form>
 
         </div>
-        </form>
+        <!-- </form> -->
     </div>
 </div>
 <!--######## Sample Questions -->
@@ -72,7 +95,7 @@
                         placeholder="Ask Shushinda">
                     <label for="questionInput">Ask Shushinda</label>
                 </div>
-                <button class="btn btn-outline-secondary" type="submit" id="buttonAsk" for="questionInput">
+                <button class="btn btn-outline-secondary" id="buttonAsk" for="questionInput">
                     Ask
                 </button>
             </div>
@@ -89,10 +112,20 @@
     <div class="row">
         <div class="col-md-12 mt-4">
             <div class="card">
+                
                 <div class="card-header text-white bg-secondary">
                     Chat with Shushinda Hushwisper
+                    <form method="POST" id="clearHistoryForm">
+                        <button class="btn btn-dark" id="clearBtn" name="clearBtn" for="clearHistoryForm">
+                            Clear
+                        </button>
+                    </form>
                 </div>
-                <div class="card-body chat-history">
+
+
+                <div class="card-body chat-history" id="chatHistory">
+                   
+                    
                     {% for item in model.history %}
                     {% if item.is_her %}
                     <!-- Render her text -->

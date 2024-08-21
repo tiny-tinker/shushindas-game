@@ -7,3 +7,6 @@ PyPDF2
 setuptools
 wheel
 spacy
+openai
+pinecone-client
+weave
