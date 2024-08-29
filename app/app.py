@@ -13,8 +13,8 @@ app = Flask(__name__)
 app.secret_key = 'So long and thanks for all the fish!'
 
 
-WEAVE_PROJECT = "sushindas-game"
-weave.init( WEAVE_PROJECT )
+WEAVE_PROJECT = "shushindas-game"
+weave_client = weave.init( WEAVE_PROJECT )
 
 
 # VECTOR_DB = "bq"
@@ -27,6 +27,20 @@ LLM = "openai"
 
 
 history = []
+
+@app.route("/feedback", methods=["POST"])
+def feedback():
+    data = request.json
+    call_id = data.get("call_id")
+    feedback = data.get("feedback")
+    print( f"{call_id}: {feedback}")
+
+    call = weave_client.call(call_id)
+    call.feedback.add_reaction(feedback)
+    call.feedback.add_note("this is a note")
+    call.feedback.add("UserInfo", { "name": "clyde", "user_id": "42231" })
+
+    return jsonify({})
 
 @app.route("/clear-history", methods=['POST'])
 def clear_hist():
@@ -53,10 +67,13 @@ def ask():
     history = session['history']
 
     if question is not None:
-        with weave.attributes({'sample_question_num': sample_question_num}):
-            answer = llm.predict(question, context)
+
+        with weave.attributes({'sample_question_num': sample_question_num, "env": "prod" }):
+            response = llm.predict(question, context)
+            answer = response["response"]
+            call_id = response["call_id"]
         if answer is not None:
-            history.extend( add_to_history( question, answer ) )
+            history.extend( add_to_history( question, answer, call_id ) )
             answer = random.choice(GREETINGS)
     session['history'] = history 
     sample_questions = get_sample_questions()
@@ -92,7 +109,7 @@ def main():
 
     # Display the home page with the required variables set
     llms = [ l['model'] for l in LLMS ]
-    model = { "message": answer, "input": question, "history": history, "working": "done", "llms":llms }
+    model = { "message": answer, "input": question, "history": history, "llms":llms }
     
     qs = get_sample_questions()
     model = model | qs
@@ -135,7 +152,7 @@ def get_history():
     })
     return chat_history
 
-def add_to_history( question, response ):
+def add_to_history( question, response, call_id ):
     items = []
     items.append({
         "is_her": False,
@@ -147,7 +164,8 @@ def add_to_history( question, response ):
         "is_her": True,
         "is_me": False,
         "text": response,
-        "timestamp": datetime.datetime.now()
+        "timestamp": datetime.datetime.now(),
+        "call_id": call_id
     })
     return items
 

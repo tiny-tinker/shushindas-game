@@ -170,6 +170,65 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         });
     });
+
+
+    // Handle feedback
+    const thumbsUpButtons = document.querySelectorAll('[id^="thumbsUpBtn"]');
+    const thumbsDownButtons = document.querySelectorAll('[id^="thumbsDownBtn"]');
+
+    thumbsUpButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+
+           // Retrieve the message text and call_id
+           const messageBubble = this.closest('.msg-bubble');
+           const messageText = messageBubble.textContent.trim();
+           const callId = messageBubble.getAttribute('data-call-id');
+
+            // Call fetch to send feedback
+            sendFeedback(messageText, '👍', callId);
+        });
+    });
+
+    thumbsDownButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+
+           // Retrieve the message text and call_id
+           const messageBubble = this.closest('.msg-bubble');
+           const messageText = messageBubble.textContent.trim();
+           const callId = messageBubble.getAttribute('data-call-id');
+
+            // Call fetch to send feedback
+            sendFeedback(messageText, '👎', callId);
+        });
+    });
+
+    function sendFeedback(message, feedbackType, callId) {
+        fetch('/feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: message,
+                feedback: feedbackType,
+                call_id: callId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Feedback response:', data);
+            // Handle response if needed
+        })
+        .catch(error => {
+            console.error('Error sending feedback:', error);
+        });
+    }
+
+
+    
+
 });
 // Handling the clear button click
 document.getElementById('clearBtn').addEventListener('click', function (event) {

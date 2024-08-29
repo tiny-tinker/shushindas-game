@@ -39,3 +39,6 @@ terraform.rc
 
 
 .venv/
+.env
+
+app/deleteme.py

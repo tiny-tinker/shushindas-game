@@ -17,6 +17,8 @@ from vertexai.generative_models import GenerativeModel, Part, FinishReason, Cand
 from openai import OpenAI
 
 from pinecone import Pinecone, ServerlessSpec
+from pydantic import BaseModel, Field
+from typing import Union
 
 import spacy
 
@@ -65,6 +67,8 @@ UNLOCK_QUESTION = "What is the Trial?"
 
 LLMS = [
     {"model": "gpt-4o-mini", "family": "openai"},
+    {"model": "gpt-4o", "family": "openai"},
+    {"model": "gpt-4-turbo", "family": "openai"},
     {"model": "gemini-1.5-flash-001", "family": "gemini" }
     
 ]
@@ -72,94 +76,93 @@ LLMS = [
 class SystemPrompt(weave.Object):
     prompt: str
 
-class LanguageModel:
-    def __init__(self, llm_name):
-    
-        llm = next( llm for llm in LLMS if llm["model"] == llm_name )
-    
-        print( f"Model: {llm['family']}")
+
+class LanguageModel(weave.Model):
+    llm_fam: str = Field( "openai", description="The family of the language model")
+    llm_model_name: str = Field("gpt-4o-mini", description="The specific model name of the LLM")
+    system_prompt: str = Field("Shushinda Hushwisper", description="The system prompt used by the LLM")
+    txt_model: Union[GenerativeModel, OpenAI] = Field(None, description="The model client to then .predict" )
+
+    def __init__(self, llm_name: str, prompt: str = SHUSHINDA):
+        # Initialize Pydantic BaseModel
+        super().__init__()
+
+        # Find the LLM configuration based on the provided llm_name
+        llm = next(llm for llm in LLMS if llm["model"] == llm_name)
+
+        print(f"Model: {llm['family']}")
         self.llm_fam = llm["family"]
         self.llm_model_name = llm["model"]
-    
-        self.SYSTEM_PROMPT = SystemPrompt( prompt=SHUSHINDA )
-        weave.publish(self.SYSTEM_PROMPT)
 
+        self.system_prompt = SystemPrompt(prompt=prompt)
+        weave.publish(self.system_prompt)
 
         if self.llm_fam == "gemini":
-
-            # TODO: Should probably get this from config.gcp.project_id or something
+            # Initialize Gemini-specific configurations
             PROJECT_ID = os.getenv("PROJECT")
-            REGION     = os.getenv( "REGION" )
-            vertexai.init( project=PROJECT_ID, location=REGION ) 
-            
-            self.txt_model = GenerativeModel(self.llm_name)
+            REGION = os.getenv("REGION")
+            vertexai.init(project=PROJECT_ID, location=REGION)
+
+            self.txt_model = GenerativeModel(self.llm_model_name)
 
         elif self.llm_fam == "openai":
-            # self.model_name = "gpt-4o-mini"
-
-            # Is this really useful? ¯\_(ツ)_/¯
+            # Initialize OpenAI-specific configurations
             client = OpenAI()
             self.txt_model = client
 
-            # OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    @weave.op
+    def predict(self, question: str, context: str=None):
 
-    # @weave.op() # Having this here will only log this block. 
-    def predict(self, question, context ):
+        resp: str = ""
+        current_call = weave.get_current_call()
+        # call_id = current_call.id
 
         if self.llm_fam == "gemini":
-            return self.ask_gemini( question, context)
-        if self.llm_fam == "openai":
-            return self.ask_openai( question, context)
+            resp = self.ask_gemini(question, context)
+        elif self.llm_fam == "openai":
+            resp = self.ask_openai(question, context)
+        return {"response": resp, "call_id": current_call.id }
+    
+    @weave.op
+    def ask_openai(self, question: str, data: str):
+        messages = [
+            {"role": "system", "content": self.system_prompt.prompt},
+            {"role": "user", "content": question}
+        ]
 
-    @weave.op()
-    def ask_openai( self, question, data ):
+        if data is not None:
+            messages.extend( [{"role": "assistant", "content": data}] )
 
-        # PROMPT = f"""
-        # {SHUSHINDA}
-        # CONTEXT: {data}
-        # QUESTION: {question}
-        # """
-        messages=[
-                {"role": "system", "content":  self.SYSTEM_PROMPT.prompt },
-                {"role": "user", "content": question },
-                {"role": "assistant", "content": data },
-            ]
-        
         response = self.txt_model.chat.completions.create(
             model=self.llm_model_name,
             messages=messages
-            )
-        # print( f"openai response: {response}" )
+        )
+
         if response.choices[0].finish_reason != "stop":
             return random.choice(COULD_NOT_ANSWER)
         else:
             return response.choices[0].message.content
-            
-    @weave.op()
-    def ask_gemini(self, question, data):
-        # You will need to change the code below to ask Gemni to
-        # answer the user's question based on the data retrieved
-        # from their search
 
+    @weave.op
+    def ask_gemini(self, question: str, data: str):
         PROMPT = f"""
-        {self.SYSTEM_PROMPT.prompt}
+        {self.system_prompt.prompt}
         CONTEXT: {data}
         QUESTION: {question}
         """
-        
+
         response = self.txt_model.generate_content(
             [PROMPT],
             stream=False,
         )
-        # print( f"PROMPT: {PROMPT[:400]}...")
-        # print( f"Full response: {response}")
 
         if response.candidates[0].finish_reason != FinishReason.STOP:
             return random.choice(COULD_NOT_ANSWER)
         else:
             return response.text
 
-# TODO: Finish building this out. 
+
+
 class EmbeddingsDB:
     def __init__(self, emb_model_fam="openai", vector_db="pinecone"):
         
@@ -300,7 +303,7 @@ class EmbeddingsDB:
             data = self.search_pinecone( the_embeddings)
 
         return data
-    @weave.op()
+    @weave.op
     def search_bq(self, the_embeddings):
                     # Search BQ. Something like this:
             query = f"""
@@ -329,7 +332,7 @@ class EmbeddingsDB:
 
             return data
 
-    @weave.op()
+    @weave.op
     def search_pinecone( self, the_embeddings ):
         # https://docs.pinecone.io/guides/get-started/quickstart#8-run-a-similarity-search
         index = self.pc.Index(self.pc_index_name)
