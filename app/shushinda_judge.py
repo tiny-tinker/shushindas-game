@@ -7,6 +7,8 @@ import asyncio
 import numpy as np
 
 from utils import *
+import argparse
+
 
 JUDGE_PROMPT = """
             You are an LLM Judge with expertise in evaluating responses based on the traits of Mischief, Whimsy, and Rebellion. Given a question and an answer, you will evaluate how well the answer exhibits these three traits on a scale of 1 to 5, where 1 means the trait is barely present, and 5 means it is strongly present. Provide the evaluation results in the following JSON format:
@@ -82,7 +84,7 @@ class ShushindaJudge(Scorer):
     # TODO: Make this async?
     def call_llm(self, prompt: str, question: str) -> str:
 
-        llm = LanguageModel(llm_name=self.llm_name, prompt=prompt)
+        llm = LanguageModel(llm_name=self.llm_name, name=self.llm_name, prompt=prompt)
 
         judgement = llm.predict(question=question)
 
@@ -120,28 +122,49 @@ models = [
     "gemini-1.5-flash-001"
 ]
 
+def do_single_judgement():
 # To run just a single question
-# question = examples[0]['question']
-# answer = examples[0]['answer']
-# for model in models:
-#     shushinda_judge = ShushindaJudge()
-#     scores = shushinda_judge.score(question=question, answer=answer, llm_name=model)
-#     print(scores)
+    question = examples[0]['question']
+    answer = examples[0]['answer']
+    for model in models:
+        shushinda_judge = ShushindaJudge()
+        scores = shushinda_judge.score(question=question, answer=answer, llm_name=model)
+        print(scores)
 
 
 # Split the examples intob buckets of 10, and run eval on each bucket
 # This doesn't really make sense to do though?
-# splits = np.array_split( examples, 10 )
-# for split in splits:
-#     evaluation = weave.Evaluation(dataset=split, scorers=[ShushindaJudge()])
-#     LLM = LanguageModel(llm_name=models[0])
-#     asyncio.run(evaluation.evaluate(LLM))
+def do_buckets():
+    splits = np.array_split( examples, 10 )
+    for split in splits:
+        evaluation = weave.Evaluation(dataset=split, scorers=[ShushindaJudge()])
+        LLM = LanguageModel(llm_name=models[0], name=models[0])
+        asyncio.run(evaluation.evaluate(LLM))
 
 
 # This will ask the same question across the models available
-split = examples[:1]
-evaluation = weave.Evaluation(dataset=split, scorers=[ShushindaJudge()], )
-for model in models:
-    print( f"Starting model '{model}'")
-    LLM = LanguageModel(llm_name=model)
-    asyncio.run(evaluation.evaluate(LLM))
+def do_single_question():
+    split = examples[:1]
+    for model in models:
+        print( f"Starting model '{model}'")
+        LLM = LanguageModel(llm_name=model, name=model)
+        evaluation = weave.Evaluation(dataset=split, scorers=[ShushindaJudge()] )
+        asyncio.run(evaluation.evaluate(LLM))
+
+
+def main(args):
+    match args.action:
+        case "buckets":
+            do_buckets()
+        case "single_question":
+            do_single_question()
+        case "single_judgement":
+            do_single_judgement()
+
+# python ingest.py --file=../docs/some_words_about_dragons.txt
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description = 'Do some weave evaluations')
+    parser.add_argument('-a', '--action', help='The action to perform, one of: ["buckets", "single_question", "single_judgement"]')
+    args = parser.parse_args()
+
+    main(args)

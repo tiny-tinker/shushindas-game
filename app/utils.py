@@ -78,12 +78,13 @@ class SystemPrompt(weave.Object):
 
 
 class LanguageModel(weave.Model):
+    name: str = Field( "gpt-4o-mini", description="The name of the model. Used for nice display in weave UI.")
     llm_fam: str = Field( "openai", description="The family of the language model")
     llm_model_name: str = Field("gpt-4o-mini", description="The specific model name of the LLM")
     system_prompt: str = Field("Shushinda Hushwisper", description="The system prompt used by the LLM")
     txt_model: Union[GenerativeModel, OpenAI] = Field(None, description="The model client to then .predict" )
 
-    def __init__(self, llm_name: str, prompt: str = SHUSHINDA):
+    def __init__(self, name: str, llm_name: str, prompt: str = SHUSHINDA):
         # Initialize Pydantic BaseModel
         super().__init__()
 
@@ -93,6 +94,7 @@ class LanguageModel(weave.Model):
         print(f"Model: {llm['family']}")
         self.llm_fam = llm["family"]
         self.llm_model_name = llm["model"]
+        self.name = name
 
         self.system_prompt = SystemPrompt(prompt=prompt)
         weave.publish(self.system_prompt)
