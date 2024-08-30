@@ -2,132 +2,144 @@ import datetime
 import random
 from flask import Flask, jsonify, render_template, request, session
 import os
-
 from utils import *
-
-
-# import app.shushinda_prompt as shushinda_prompt
-
 
 app = Flask(__name__)
 app.secret_key = 'So long and thanks for all the fish!'
 
-
 WEAVE_PROJECT = "shushindas-game"
-weave_client = weave.init( WEAVE_PROJECT )
+weave_client = weave.init(WEAVE_PROJECT)
 
-
-# VECTOR_DB = "bq"
-VECTOR_DB = "pinecone"
-
-LLM = "openai"
-
-# EMB_MODEL_FAM = "gecko"
-# EMB_MODEL_FAM = "openai"
-
+VECTOR_DB = "pinecone"  # Uncomment to use BigQuery: VECTOR_DB = "bq"
+LLM = "openai"  # Set language model to OpenAI
 
 history = []
 
 @app.route("/feedback", methods=["POST"])
 def feedback():
+    """Endpoint to receive feedback for a specific call.
+
+    This function handles feedback submitted by users for a specific call ID. 
+    It adds the feedback as a reaction, a note, and stores user info associated 
+    with the feedback in Weave.
+
+    Returns:
+        dict: An empty JSON response.
+    """
     data = request.json
     call_id = data.get("call_id")
     feedback = data.get("feedback")
-    print( f"{call_id}: {feedback}")
+    print(f"{call_id}: {feedback}")
 
     call = weave_client.call(call_id)
     call.feedback.add_reaction(feedback)
     call.feedback.add_note("this is a note")
-    call.feedback.add("UserInfo", { "name": "clyde", "user_id": "42231" })
+    call.feedback.add("UserInfo", {"name": "clyde", "user_id": "42231"})
 
     return jsonify({})
 
 @app.route("/clear-history", methods=['POST'])
 def clear_hist():
-    print( 'clear!' )
+    """Endpoint to clear the chat history stored in session.
+
+    Resets the chat history session variable to an empty list.
+
+    Returns:
+        dict: JSON response containing the updated history.
+    """
+    print('clear!')
     history = []
     session['history'] = history
-    return jsonify(history=session.get('history',[]))
+    return jsonify(history=session.get('history', []))
 
 @app.route("/ask", methods=['POST'])
 def ask():
+    """Endpoint to process a user's question and return a response.
+
+    Takes a question from the user, generates a context using the 
+    EmbeddingsDB, and gets a response from the specified language model.
+
+    Returns:
+        dict: JSON response containing the answer, updated history, and sample questions.
+    """
     data = request.json
-    print( f"data: {data}")
-    question = data.get( "question" )
-    print( f"question: {question}")
+    print(f"data: {data}")
+    question = data.get("question")
+    print(f"question: {question}")
     model = data.get("model")
     sample_question_num = data.get("q_num")
 
     emb_stuff = EmbeddingsDB()
-    
-    # # Get the data to answer the question that 
-    # # most likely matches the question based on the embeddings
+
+    # Get context data to answer the question based on embeddings
     context = emb_stuff.search_vector_database(question)
     llm = LanguageModel(llm_name=model)
-    history = session['history']
+    history = session.get('history', [])
 
     if question is not None:
-
-        with weave.attributes({'sample_question_num': sample_question_num, "env": "prod" }):
+        with weave.attributes({'sample_question_num': sample_question_num, "env": "prod"}):
             response = llm.predict(question, context)
             answer = response["response"]
             call_id = response["call_id"]
         if answer is not None:
-            history.extend( add_to_history( question, answer, call_id ) )
+            history.extend(add_to_history(question, answer, call_id))
             answer = random.choice(GREETINGS)
-    session['history'] = history 
+    session['history'] = history
     sample_questions = get_sample_questions()
 
     return jsonify(answer=answer, history=history, sample_questions=sample_questions)
 
-
-# The Home page route
 @app.route("/", methods=['POST', 'GET'])
 def main():
+    """The home page route for the application.
 
+    Renders the home page and manages session history for user interactions.
+
+    Returns:
+        Response: Rendered HTML template for the home page.
+    """
     answer = None
     question = None
     response = None
     history = []
 
-    print( f"session history: {str( session.get('history') )[:40]}...")
+    print(f"session history: {str(session.get('history'))[:40]}...")
     if session.get('history') is None:
         history = []
         session['history'] = history
     else:
         history = session.get('history')
-    
-        
-    # The user clicked on a link to the Home page
-    # They haven't yet submitted the form
+
+    # Handle GET request: user has not yet submitted the form
     if request.method == 'GET':
         question = None
         answer = random.choice(GREETINGS)
 
-    # print( f"history: {history}")
     session['history'] = history
 
-    # Display the home page with the required variables set
-    llms = [ l['model'] for l in LLMS ]
-    model = { "message": answer, "input": question, "history": history, "llms":llms }
-    
+    # Prepare model data for rendering
+    llms = [l['model'] for l in LLMS]
+    model = {"message": answer, "input": question, "history": history, "llms": llms}
+
     qs = get_sample_questions()
     model = model | qs
 
     return render_template('index.html', model=model)
 
 def get_sample_questions():
-    
-    # Get a slice of the questions
-    some_questions = random.sample(ALL_SAMPLE_QUESTIONS, 4 )
+    """Generates a set of sample questions for display.
 
-    # Sometimes add in this one, otherwise leave it
-    some_questions[0] = UNLOCK_QUESTION #if random.random() > 0.5 else some_questions[0]
+    Randomly selects a subset of questions, sometimes replacing one with a specific 
+    unlock question, and shuffles them.
 
+    Returns:
+        dict: A dictionary of sample questions.
+    """
+    some_questions = random.sample(ALL_SAMPLE_QUESTIONS, 4)
+    some_questions[0] = UNLOCK_QUESTION
     random.shuffle(some_questions)
 
     model = {}
-    # Set the questions in the model
     model["question1"] = some_questions.pop()
     model["question2"] = some_questions.pop()
     model["question3"] = some_questions.pop()
@@ -136,7 +148,11 @@ def get_sample_questions():
     return model
 
 def get_history():
+    """Fetches a mock history of chat interactions for demonstration.
 
+    Returns:
+        list: A list of chat history entries.
+    """
     chat_history = []
     chat_history.append({
         "is_her": False,
@@ -152,7 +168,17 @@ def get_history():
     })
     return chat_history
 
-def add_to_history( question, response, call_id ):
+def add_to_history(question, response, call_id):
+    """Adds a question and response pair to the chat history.
+
+    Args:
+        question (str): The user's question.
+        response (str): The model's response.
+        call_id (str): The call ID for tracking.
+
+    Returns:
+        list: A list of new history items to be appended.
+    """
     items = []
     items.append({
         "is_her": False,
@@ -169,16 +195,15 @@ def add_to_history( question, response, call_id ):
     })
     return items
 
-
-
 if __name__ == '__main__':
+    # Environment variable checks
     if os.getenv("PINECONE_KEY") is None:
-        print( "PINECONE_KEY not set!" )
-    if os.getenv( "PROJECT" ) is None:
-        print( "PROJECT not set!" )
-    if os.getenv( "REGION" ) is None:
-        print( "REGION not set!" )
+        print("PINECONE_KEY not set!")
+    if os.getenv("PROJECT") is None:
+        print("PROJECT not set!")
+    if os.getenv("REGION") is None:
+        print("REGION not set!")
     if os.getenv("OPENAI_API_KEY") is None:
-        print( "OPENAI_API_KEY not set!" )
-    
+        print("OPENAI_API_KEY not set!")
+
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))

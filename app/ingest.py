@@ -4,71 +4,84 @@ from utils import *
 
 emb_stuff = EmbeddingsDB()
 
-
 def ingest(filename=None, text=None, title=None):
-    doc_name = title 
-    if doc_name is None:
-        doc_name = filename.split("/")[-1] if filename is not None else None
-    if doc_name is None:
-        doc_name = str(uuid.uuid4())
-    
-    print( f"Ingesting '{doc_name}'")
+    """Ingest a document or text into the embeddings database.
 
-    ##############
+    This function handles the ingestion of a file or text into the embeddings database.
+    It retrieves text from the file or directly from input, chunks the text, generates embeddings,
+    and stores the resulting data in the vector database.
+
+    Args:
+        filename (str, optional): The filename and path of the file to ingest.
+        text (str, optional): The actual text content to ingest.
+        title (str, optional): The title of the document. If not provided, it defaults to the filename or a UUID.
+
+    Returns:
+        None
+    """
+    # Determine document name
+    doc_name = title or (filename.split("/")[-1] if filename else str(uuid.uuid4()))
+    print(f"Ingesting '{doc_name}'")
+
     # Retrieve text
-    all_text = []
     all_text = emb_stuff.get_text(filename, text)
-
-    if all_text is None or len(all_text) == 0:
-        print( f"   No text found! Exiting.")
+    if not all_text:
+        print(f"   No text found! Exiting.")
         return
-    
-    print( f"   Got text! '{all_text[0][:50]}'")
 
-    ##############
-    # Insert text
+    print(f"   Got text! '{all_text[0][:50]}'")
 
-    # TODO: check length of `all_text` < 10 MB
-    # TODO: update instead of always insert? Or just check for duplicate `doc_name`?
+    # Insert text (currently not storing entire docs; code commented out)
+    # TODO: Check length of `all_text` < 10 MB
+    # TODO: Update instead of always insert? Or check for duplicate `doc_name`?
     rows_to_insert = [
         {u"id": str(uuid.uuid4()), u"doc_name": doc_name, u"text": "".join(all_text)}
     ]
 
-    # Do we want to store the entire docs? 
-    # emb_stuff.insert_recs( rows_to_insert )
-    # print( f"   Inserted all text!")
+    # Uncomment to store the entire documents in the vector database
+    # emb_stuff.insert_recs(rows_to_insert)
+    # print(f"   Inserted all text!")
 
-
-    ##############
     # Chunk text
     all_chunks = emb_stuff.get_chunks(all_text)
-    print( f"   Chunked all text! '{all_chunks[0][:30]}'...")
+    print(f"   Chunked all text! '{all_chunks[0][:30]}'...")
 
-    ##############
     # Insert chunks
-    # table_id = f"{DATASET}.chunks"
     rows_to_insert = []
-    chunk_id = 0
     doc_id = str(uuid.uuid4())
-    for chunk in all_chunks:
+    for chunk_id, chunk in enumerate(all_chunks):
         embeddings = emb_stuff.get_embeddings(chunk)
-        rows_to_insert.append( 
-            {u"id": doc_id + str(chunk_id), u"chunk_id": chunk_id, u"doc_name": doc_name, u"chunk_text": chunk, u"chunk_vector": embeddings}
+        rows_to_insert.append(
+            {
+                u"id": doc_id + str(chunk_id),
+                u"chunk_id": chunk_id,
+                u"doc_name": doc_name,
+                u"chunk_text": chunk,
+                u"chunk_vector": embeddings
+            }
         )
-        chunk_id = chunk_id + 1
-    
-    emb_stuff.insert_recs( rows_to_insert )
 
-    ##############
-    # Fin
+    emb_stuff.insert_recs(rows_to_insert)
+
+    print("   Finished ingesting document!")
 
 def main(args):
-    print('The filename:, %s!' % args.file)
+    """Main function to parse arguments and start the ingestion process.
+
+    Args:
+        args (Namespace): Command-line arguments parsed by argparse.
+
+    Returns:
+        None
+    """
+    print(f'The filename: {args.file}!')
     ingest(args.file, args.text, args.title)
 
-# python ingest.py --file=../docs/some_words_about_dragons.txt
+# Command-line entry point
+# Example: python ingest.py --file=../docs/some_words_about_dragons.txt
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description = 'Ingest some docs')
+    parser = argparse.ArgumentParser(description='Ingest some docs')
     parser.add_argument('-f', '--file', help='The filename and path of the file to ingest')
     parser.add_argument('-t', '--text', help='The actual text of the file to ingest. Optional')
     parser.add_argument('-ti', '--title', help='The title of the document. If not set, the doc name will be the filename or a UUID. Optional')
