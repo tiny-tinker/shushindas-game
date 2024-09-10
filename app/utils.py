@@ -85,7 +85,7 @@ class LanguageModel(weave.Model):
     llm_fam: str = Field("openai", description="The family of the language model")
     llm_model_name: str = Field("gpt-4o-mini", description="The specific model name of the LLM")
     system_prompt: str = Field("Shushinda Hushwisper", description="The system prompt used by the LLM")
-    txt_model: Union[GenerativeModel, OpenAI] = Field(None, description="The model client to then .predict")
+    # txt_model: Union[GenerativeModel, OpenAI] = Field(None, description="The model client to then .predict")
 
     def __init__(self, name: str, llm_name: str, prompt: str = SHUSHINDA):
         """Initialize the LanguageModel with configurations."""
@@ -102,18 +102,6 @@ class LanguageModel(weave.Model):
         self.system_prompt = SystemPrompt(prompt=prompt)
         weave.publish(self.system_prompt)
 
-        if self.llm_fam == "gemini":
-            # Initialize Gemini-specific configurations
-            PROJECT_ID = os.getenv("PROJECT")
-            REGION = os.getenv("REGION")
-            vertexai.init(project=PROJECT_ID, location=REGION)
-            self.txt_model = GenerativeModel(self.llm_model_name)
-
-        elif self.llm_fam == "openai":
-            # Initialize OpenAI-specific configurations
-            client = OpenAI()
-            self.txt_model = client
-
     @weave.op
     def predict(self, question: str, context: str = None):
         """Predict the response based on the input question and context.
@@ -127,6 +115,11 @@ class LanguageModel(weave.Model):
         """
         resp: str = ""
         current_call = weave.get_current_call()
+
+        if context is None:
+            emb_stuff = EmbeddingsDB()
+            # Get context data to answer the question based on embeddings
+            context = emb_stuff.search_vector_database(question)
 
         if self.llm_fam == "gemini":
             resp = self.ask_gemini(question, context)
@@ -145,6 +138,9 @@ class LanguageModel(weave.Model):
         Returns:
             str: The model's response or a fallback if the response is incomplete.
         """
+        client = OpenAI()
+        txt_model = client
+
         messages = [
             {"role": "system", "content": self.system_prompt.prompt},
             {"role": "user", "content": question}
@@ -153,7 +149,7 @@ class LanguageModel(weave.Model):
         if data is not None:
             messages.extend([{"role": "assistant", "content": data}])
 
-        response = self.txt_model.chat.completions.create(
+        response = txt_model.chat.completions.create(
             model=self.llm_model_name,
             messages=messages
         )
@@ -174,13 +170,18 @@ class LanguageModel(weave.Model):
         Returns:
             str: The model's response or a fallback if the response is incomplete.
         """
+        PROJECT_ID = os.getenv("PROJECT")
+        REGION = os.getenv("REGION")
+        vertexai.init(project=PROJECT_ID, location=REGION)
+        txt_model = GenerativeModel(self.llm_model_name)
+        
         PROMPT = f"""
         {self.system_prompt.prompt}
         CONTEXT: {data}
         QUESTION: {question}
         """
 
-        response = self.txt_model.generate_content(
+        response = txt_model.generate_content(
             [PROMPT],
             stream=False,
         )
@@ -307,6 +308,7 @@ class EmbeddingsDB:
 
         return embs
 
+    @weave.op
     def search_vector_database(self, question):
         """Search the vector database for the closest embeddings to the user's question.
 
@@ -382,11 +384,16 @@ class EmbeddingsDB:
             include_values=True,
             include_metadata=True
         )
+        
+        # Initialize a list to store the text of top 3 vectors
+        top_texts = []
 
-        for r in results['matches']:
-            print(f"results: {round(r['score'], 2)}: {r['metadata']}")
-            # print(f"stuff: {r['score']}")
-        return ""
+        # Extract the 'text' from metadata of the top 3 matches
+        for match in results['matches']:
+            if 'metadata' in match and 'chunk_text' in match['metadata']:
+                top_texts.append(match['metadata']['chunk_text'])
+
+        return ''.join(top_texts)
 
     def insert_recs(self, rows_to_insert):
         """Insert records into the vector database based on the current configuration.
@@ -453,7 +460,7 @@ class EmbeddingsDB:
             print("Encountered errors while inserting rows: {}".format(errors))
 
         return errors
-    
+
     def get_doc_names(self):
         """Retrieve unique document names from the Pinecone index.
 

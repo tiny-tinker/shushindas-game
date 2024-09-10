@@ -102,9 +102,6 @@ weave_client = weave.init(WEAVE_PROJECT)
 with open('examples.json', 'r') as file:
     examples = json.load(file)
 
-dataset = Dataset(name='shushinda-examples', rows=examples)
-weave.publish(dataset)
-
 models = [
     "gpt-4o-mini",
     "gpt-4-turbo",
@@ -115,6 +112,10 @@ def do_single_judgement():
     """Perform a single judgement for each model using the first example in the dataset."""
     question = examples[0]['question']
     answer = examples[0]['answer']
+    
+    dataset = Dataset(name='shushinda-single', rows=examples[0])
+    weave.publish(dataset)
+
     for model in models:
         shushinda_judge = ShushindaJudge()
         scores = shushinda_judge.score(question=question, answer=answer, llm_name=model)
@@ -123,19 +124,34 @@ def do_single_judgement():
 def do_buckets():
     """Split the examples into buckets of 10 and run evaluation on each bucket."""
     # This doesn't really make sense to do though?
-    splits = np.array_split(examples, 10)
+    splits = np.array_split(examples, 10).tolist()
+    idx = 0
     for split in splits:
+        dataset = Dataset(name=f"shushinda-buckets-{idx}", rows=split)
+        weave.publish(dataset)
         evaluation = weave.Evaluation(dataset=split, scorers=[ShushindaJudge()])
         LLM = LanguageModel(llm_name=models[0], name=models[0])
         asyncio.run(evaluation.evaluate(LLM))
 
+def do_dataset():
+    """Run the evaluation on the entire dataset"""
+    
+    dataset = Dataset(name=f"shushinda-dataset", rows=examples)
+    weave.publish(dataset)
+    evaluation = weave.Evaluation(name="Full Dataset Eval", dataset=examples, scorers=[ShushindaJudge()])
+    LLM = LanguageModel(llm_name=models[0], name=models[0])
+    asyncio.run(evaluation.evaluate(LLM))
+
 def do_single_question():
     """Ask the same question across all available models."""
     split = examples[:1]
+    dataset = Dataset(name='shushinda-single', rows=split)
+    weave.publish(dataset)
+
     for model in models:
         print(f"Starting model '{model}'")
         LLM = LanguageModel(llm_name=model, name=model)
-        evaluation = weave.Evaluation(dataset=split, scorers=[ShushindaJudge()])
+        evaluation = weave.Evaluation(name="All Models Eval", dataset=split, scorers=[ShushindaJudge()])
         asyncio.run(evaluation.evaluate(LLM))
 
 def main(args):
@@ -147,9 +163,11 @@ def main(args):
             do_single_question()
         case "single_judgement":
             do_single_judgement()
+        case "dataset":
+            do_dataset()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Do some weave evaluations')
-    parser.add_argument('-a', '--action', help='The action to perform, one of: ["buckets", "single_question", "single_judgement"]')
+    parser.add_argument('-a', '--action', help='The action to perform, one of: ["buckets", "dataset", "single_question", "single_judgement"]')
     args = parser.parse_args()
     main(args)

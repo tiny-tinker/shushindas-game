@@ -69,16 +69,13 @@ def ask():
     model = data.get("model")
     sample_question_num = data.get("q_num")
 
-    emb_stuff = EmbeddingsDB()
 
-    # Get context data to answer the question based on embeddings
-    context = emb_stuff.search_vector_database(question)
-    llm = LanguageModel(llm_name=model)
+    llm = LanguageModel(llm_name=model, name=model)
     history = session.get('history', [])
 
     if question is not None:
         with weave.attributes({'sample_question_num': sample_question_num, "env": "prod"}):
-            response = llm.predict(question, context)
+            response = llm.predict(question=question)
             answer = response["response"]
             call_id = response["call_id"]
         if answer is not None:
@@ -206,4 +203,4 @@ if __name__ == '__main__':
     if os.getenv("OPENAI_API_KEY") is None:
         print("OPENAI_API_KEY not set!")
 
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    app.run( host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
