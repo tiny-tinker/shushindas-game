@@ -34,7 +34,7 @@ export TF_VAR_project=$MY_PROJECT
 export TF_VAR_bq_region=$BQ_REGION
 ```
 
-TODO: Sort out what to do about this.
+TODO: Sort out what to do about this. BQ is not really necessary. 
 
 Now run some terraform.
 
