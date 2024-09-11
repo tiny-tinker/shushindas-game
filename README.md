@@ -2,7 +2,7 @@
 
 
 <p align="center">
-    <img src="./images/shushinda_at_desk_1.jpeg" width="300">
+    <img src="./images/shushinda_at_desk_1.png" width="300">
 </p>
 
 Shushinda Hushwhisper, born into a long line of unremarkable wizards, held no extraordinary promise. In fact, her talent lay in making the ordinary a touch chaotic. A magical accident quite early in her studies left her spells prone to targeting library materials rather than their intended subjects. This penchant for rearranging spellbooks and summoning dusty tomes was a source of constant frustration for her professors, but a secret delight for Shushinda.
