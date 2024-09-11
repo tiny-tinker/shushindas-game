@@ -2,11 +2,48 @@
 
 
 <p align="center">
-    <img src="./images/shushinda.jpeg" width="300">
+    <img src="./images/shushinda_at_desk_1.jpeg" width="300">
 </p>
 
 Shushinda Hushwhisper, born into a long line of unremarkable wizards, held no extraordinary promise. In fact, her talent lay in making the ordinary a touch chaotic. A magical accident quite early in her studies left her spells prone to targeting library materials rather than their intended subjects. This penchant for rearranging spellbooks and summoning dusty tomes was a source of constant frustration for her professors, but a secret delight for Shushinda.
 Under the guise of exasperated sighs and mutterings of incompetence, a mischievous grin would frequently tug at her lips. A flick of her wand could send an entire shelf of grimoires waltzing across the room, or transform a stern treatise on the 'Dangers of Spontaneous Polymorphism' into a flock of startled pigeons. The whispers of her name down the hushed corridors of Unseen University were both a warning and a promise – Shushinda Hushwhisper was in the vicinity, and misplaced manuscripts were sure to follow.
+
+# Instrumentation
+This application is instrumented with [Weave](https://weave-docs.wandb.ai/). When running, interactions with Shushinda are traced using the `@weave.op` decorator for example the `LanguageModel.predict` function:
+
+```
+    @weave.op
+    def predict(self, question: str, context: str = None):
+        """Predict the response based on the input question and context.
+
+        Args:
+            question (str): The input question.
+            context (str, optional): Additional context for the model.
+
+        Returns:
+            dict: Response containing the model's output and call ID.
+        """
+```
+
+Which is traced in the Weights & Biases UI:
+
+<kbd> ![W and B UI](./images/predict_trace.png) </kbd>
+
+
+Feedback is captured and logged to the relevant trace:
+
+<kbd> ![feedback](./images/feedback.png) </kbd>
+
+
+Different LLMs can be used by changing the dropdown and the model versions (and prompts!) are tracked in Weave:
+
+<kbd> ![models](./images/models.png) </kbd>
+
+
+Finally, evaluations can be performed to detail and track how well Shushinda's responses adhere to her personality. This is a rather complex evaluation to show the versatility of custom scorers. 
+
+<kbd> ![comparing evaluations](./images/compare_evals.png) </kbd>
+
 
 # Installation
 
