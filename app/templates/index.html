@@ -125,33 +125,7 @@
 
                 <div class="card-body chat-history" id="chatHistory">
                    
-                    
-                    {% for item in model.history %}
-                    {% if item.is_her %}
-                    <!-- Render her text -->
-                    <div class="d-flex justify-content-end mb-2">
-                        <div class="msg-bubble msg-received position-relative" data-call-id="{{ item.call_id }}">
-                            {{ item.text|safe }}
-                            <div class="feedback-icons position-absolute" style="position: absolute; bottom: 5px; right: 5px;">
-                                <button class="btn btn-sm p-0" id="thumbsUpBtn-{{ loop.index }}">
-                                    👍
-                                </button>
-                                <button class="btn btn-sm p-0 ms-1" id="thumbsDownBtn-{{ loop.index }}">
-                                    👎
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Render my text -->
-                    <div class="d-flex justify-content-start mb-2">
-                        <div class="msg-bubble msg-sent">
-                            {{ item.text|safe }}
-                            
-                        </div>
-                    </div>
-                    {% endif %}
-                    {% endfor %}
+  
                 </div>
             </div>
         </div>

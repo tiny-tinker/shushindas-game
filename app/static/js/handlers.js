@@ -18,15 +18,23 @@ function renderHistory(history) {
     const chatHistory = document.getElementById('chatHistory');
     chatHistory.innerHTML = '';  // Clear the current chat history
 
-    history.forEach(function (item) {
+    history.forEach(function (item, index) {  // Use index to create unique IDs for thumbs
         const div = document.createElement('div');
         div.classList.add('d-flex', 'mb-2');
 
         if (item.is_her) {
             div.classList.add('justify-content-end');
             div.innerHTML = `
-                <div class="msg-bubble msg-received">
+                <div class="msg-bubble msg-received position-relative" data-call-id="${item.call_id}">
                     ${item.text}
+                    <div class="feedback-icons position-absolute" style="bottom: 5px; right: 5px;">
+                        <button class="btn btn-sm p-0" id="thumbsUpBtn-${index}">
+                            👍
+                        </button>
+                        <button class="btn btn-sm p-0 ms-1" id="thumbsDownBtn-${index}">
+                            👎
+                        </button>
+                    </div>
                 </div>
             `;
         } else {
@@ -40,7 +48,45 @@ function renderHistory(history) {
 
         chatHistory.appendChild(div);
     });
+
+    // After rendering the history, re-attach the event listeners
+    attachFeedbackListeners();
 }
+
+function attachFeedbackListeners() {
+    const thumbsUpButtons = document.querySelectorAll('[id^="thumbsUpBtn"]');
+    const thumbsDownButtons = document.querySelectorAll('[id^="thumbsDownBtn"]');
+
+    thumbsUpButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            // Retrieve the message text and call_id
+            const messageBubble = this.closest('.msg-bubble');
+            const messageText = messageBubble.textContent.trim();
+            const callId = messageBubble.getAttribute('data-call-id');
+
+            // Call fetch to send feedback
+            sendFeedback(messageText, '👍', callId);
+        });
+    });
+
+    thumbsDownButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            // Retrieve the message text and call_id
+            const messageBubble = this.closest('.msg-bubble');
+            const messageText = messageBubble.textContent.trim();
+            const callId = messageBubble.getAttribute('data-call-id');
+
+            // Call fetch to send feedback
+            sendFeedback(messageText, '👎', callId);
+        });
+    });
+}
+
+
 
 function getSelectedModel() {
     const dropdownButton = document.querySelector('#modelDropdown .dropdown-toggle');
@@ -170,66 +216,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         });
     });
-
-
-    // Handle feedback
-    const thumbsUpButtons = document.querySelectorAll('[id^="thumbsUpBtn"]');
-    const thumbsDownButtons = document.querySelectorAll('[id^="thumbsDownBtn"]');
-
-    thumbsUpButtons.forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.preventDefault();
-
-           // Retrieve the message text and call_id
-           const messageBubble = this.closest('.msg-bubble');
-           const messageText = messageBubble.textContent.trim();
-           const callId = messageBubble.getAttribute('data-call-id');
-
-            // Call fetch to send feedback
-            sendFeedback(messageText, '👍', callId);
-        });
-    });
-
-    thumbsDownButtons.forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.preventDefault();
-
-           // Retrieve the message text and call_id
-           const messageBubble = this.closest('.msg-bubble');
-           const messageText = messageBubble.textContent.trim();
-           const callId = messageBubble.getAttribute('data-call-id');
-
-            // Call fetch to send feedback
-            sendFeedback(messageText, '👎', callId);
-        });
-    });
-
-    function sendFeedback(message, feedbackType, callId) {
-        fetch('/feedback', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: message,
-                feedback: feedbackType,
-                call_id: callId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Feedback response:', data);
-            // Handle response if needed
-        })
-        .catch(error => {
-            console.error('Error sending feedback:', error);
-        });
-    }
-
-
     
 
 });
+
+function sendFeedback(message, feedbackType, callId) {
+    fetch('/feedback', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message: message,
+            feedback: feedbackType,
+            call_id: callId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Feedback response:', data);
+        // Handle response if needed
+    })
+    .catch(error => {
+        console.error('Error sending feedback:', error);
+    });
+}
+
 // Handling the clear button click
 document.getElementById('clearBtn').addEventListener('click', function (event) {
     event.preventDefault();  // Prevent the default form submission
